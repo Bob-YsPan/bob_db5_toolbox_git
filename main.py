@@ -1,7 +1,7 @@
 import requests
 import xml.etree.ElementTree as ET
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, font
 from urllib.parse import quote
 
 # [功能標籤] 從 URL 取得 XML 內容並解析
@@ -31,6 +31,18 @@ def fetch_file_data(url):
     except ET.ParseError as e:
         print(f"XML 解析錯誤: {e}")
         return []
+
+# List of preferred fonts (with fallback options)
+font_fallback_list = ["微軟正黑體", 
+                      "Noto Sans CJK TC", 
+                      "Sans"]
+
+# Function to find the first available font in the list
+def get_available_font():
+    for font_name in font_fallback_list:
+        if font_name in font.families():  # Check if the font is available in the system
+            return font_name
+    return font_fallback_list[-1]  # Return the last fallback font if none are found
 
 # [功能標籤] 顯示播放 URL 的彈窗
 def show_playback_url(filepath):
@@ -82,6 +94,12 @@ def create_file_browser(initial_file_list):
     root = tk.Tk()
     root.title("LOOKING DB5 工具箱")
     root.geometry("800x450")
+    defaultFont = font.nametofont("TkDefaultFont")
+    avaliableFont = get_available_font()
+    defaultFont.configure(family=avaliableFont,
+                          size=12,
+                          weight=font.NORMAL)
+    
 
     # Create a frame to hold the buttons
     button_frame = tk.Frame(root)
