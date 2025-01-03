@@ -14,3 +14,5 @@ build/Bob_Looking_DB5_Toolbox/localpycs/pyimod03_ctypes.pyc
 build/Bob_Looking_DB5_Toolbox/localpycs/pyimod04_pywin32.pyc
 build/Bob_Looking_DB5_Toolbox/localpycs/struct.pyc
 dist/Bob_Looking_DB5_Toolbox.exe
+main copy.py
+__pycache__

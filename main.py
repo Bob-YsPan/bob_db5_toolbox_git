@@ -6,8 +6,12 @@ from urllib.parse import quote
 from datetime import datetime
 from io import BytesIO
 from PIL import Image, ImageTk
+import sv_ttk
 
-# Function to fetch file data from a URL and parse the XML response
+# Import the text definitions from gui_text.py
+from gui_text_zh_tw import TEXTS
+
+
 def fetch_file_data(url):
     """
     Fetches file data from a URL and parses the XML response.
@@ -40,12 +44,14 @@ def fetch_file_data(url):
 
     except requests.exceptions.RequestException as e:
         print(f"Failed to connect to URL: {e}")
+        messagebox.showerror(
+            TEXTS["error_msg"], TEXTS["error_connection_failed_message"])
         return []
     except ET.ParseError as e:
         print(f"XML parsing error: {e}")
         return []
 
-# Function to find the first available font from a list
+
 def get_available_font():
     """
     Finds the first available font from a list of preferred fonts.
@@ -63,34 +69,9 @@ def get_available_font():
     for font_name in font_fallback_list:
         if font_name in font.families():  # Check if font is available
             return font_name
-    return font_fallback_list[-1]  # Return last fallback font if none are found
+    # Return last fallback font if none are found
+    return font_fallback_list[-1]
 
-# Function to display a popup window with the playback URL
-# def show_playback_url(filepath):
-#     """
-#     Displays a popup window with the playback URL for a file.
-
-#     Args:
-#         filepath (str): The path of the file.
-#     """
-
-#     playback_url = filepath.replace("A:\\", "http://192.168.1.254/").replace("\\", "/")
-#     popup = tk.Toplevel()
-#     popup.title("Playback URL")
-#     popup.geometry("400x100")
-#     popup.transient()
-#     popup.grab_set()
-
-#     label = tk.Label(popup, text="Playback URL:")
-#     label.pack(pady=5)
-
-#     url_entry = tk.Entry(popup, width=50)
-#     url_entry.insert(0, playback_url)
-#     url_entry.pack(pady=5)
-#     url_entry.configure(state="readonly")
-
-#     copy_button = tk.Button(popup, text="Copy URL", command=lambda: copy_to_clipboard(popup, playback_url))
-#     copy_button.pack(pady=5)
 
 def show_playback_url(filepath):
     """
@@ -100,7 +81,8 @@ def show_playback_url(filepath):
         filepath (str): The path of the file.
     """
 
-    playback_url = filepath.replace("A:\\", "http://192.168.1.254/").replace("\\", "/")
+    playback_url = filepath.replace(
+        "A:\\", "http://192.168.1.254/").replace("\\", "/")
 
     try:
         # Fetch preview image
@@ -121,11 +103,10 @@ def show_playback_url(filepath):
     popup.transient()
     popup.grab_set()
 
-
-    label = tk.Label(popup, text="Playback URL:")
+    label = ttk.Label(popup, text=TEXTS["playback_url_text"])
     label.pack(pady=5)
 
-    url_entry = tk.Entry(popup, width=50)
+    url_entry = ttk.Entry(popup, width=50)
     url_entry.insert(0, playback_url)
     url_entry.pack(pady=5)
     url_entry.configure(state="readonly")
@@ -134,26 +115,34 @@ def show_playback_url(filepath):
         image_label = Label(popup, image=photo)
         image_label.image = photo  # Keep a reference to prevent garbage collection
         image_label.pack(pady=5)
+    else:
+        image_label = Label(popup, text=TEXTS["error_no_preview"])
+        image_label.pack(pady=5)
 
-    copy_button = tk.Button(popup, text="Copy URL", command=lambda: copy_to_clipboard(popup, playback_url))
+    copy_button = ttk.Button(
+        popup, text=TEXTS["copy_url_btn_text"], command=lambda: copy_to_clipboard(popup, playback_url))
     copy_button.pack(pady=5)
 
 # Function to copy text to the clipboard
+
+
 def copy_to_clipboard(popup, text):
     """
     Copies text to the clipboard and displays a success message.
 
     Args:
-        popup (tk.Toplevel): The popup window.
+        popup (ttk.Toplevel): The popup window.
         text (str): The text to copy.
     """
 
     popup.clipboard_clear()
     popup.clipboard_append(text)
     popup.update()
-    messagebox.showinfo("Success", "URL copied to clipboard")
+    messagebox.showinfo(TEXTS["success_msg"], TEXTS["copy_url_success_msg"])
 
 # Function to send a delete file request
+
+
 def delete_file(filepath, refresh_func):
     """
     Sends a delete file request to the server and refreshes the file list if successful.
@@ -172,15 +161,19 @@ def delete_file(filepath, refresh_func):
         root = ET.fromstring(response.text)
         status = root.find(".//Status").text
         if status == "0":
-            messagebox.showinfo("Success", f"File deleted: \n{filepath}")
+            messagebox.showinfo(
+                TEXTS["success_msg"], TEXTS["success_file_deleted_message"] + f"\n{filepath}")
             refresh_func()  # Refresh file list after successful deletion
         else:
-            messagebox.showerror("Error", f"Deletion failed, return code {status}.")
+            messagebox.showerror(
+                TEXTS["error_msg"], TEXTS["error_delete_failed_message"] + status + ".")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to delete file: {e}")
-
+        messagebox.showerror(
+            TEXTS["error_msg"], TEXTS["error_file_delete"].format(e))
 
 # Function to create a tkinter window to display file information, allow sorting, and deletion
+
+
 def create_file_browser(initial_file_list):
     """
     Creates a tkinter window to display file information, allow sorting, and deletion.
@@ -188,26 +181,29 @@ def create_file_browser(initial_file_list):
     Args:
         initial_file_list (list): A list of dictionaries containing initial file information.
     """
-
     root = tk.Tk()
-    root.title("LOOKING DB5 Toolbox")
+    root.title(TEXTS["title"])
     root.geometry("800x450")
     defaultFont = font.nametofont("TkDefaultFont")
     avaliableFont = get_available_font()
     defaultFont.configure(family=avaliableFont, size=12, weight=font.NORMAL)
 
     # Create a frame to hold the buttons
-    button_frame = tk.Frame(root)
+    button_frame = ttk.Frame(root)
     button_frame.pack(pady=5, fill=tk.X)
 
     file_list = initial_file_list
 
     columns = ("index", "filename", "filesize", "filetime")
     tree = ttk.Treeview(root, columns=columns, show="headings")
-    tree.heading("index", text="Index", command=lambda: sort_column("index"))
-    tree.heading("filename", text="Filename", command=lambda: sort_column("filename"))
-    tree.heading("filesize", text="File Size (MB)", command=lambda: sort_column("filesize"))
-    tree.heading("filetime", text="File Time", command=lambda: sort_column("filetime"))
+    tree.heading("index", text=TEXTS["tree_index_text"],
+                 command=lambda: sort_column("index"))
+    tree.heading("filename", text=TEXTS["tree_fname_text"],
+                 command=lambda: sort_column("filename"))
+    tree.heading("filesize", text=TEXTS["tree_fsize_text"],
+                 command=lambda: sort_column("filesize"))
+    tree.heading("filetime", text=TEXTS["tree_ftime_text"],
+                 command=lambda: sort_column("filetime"))
 
     tree.column("index", width=50, anchor="center")
     tree.column("filename", width=400, anchor="w")
@@ -218,6 +214,37 @@ def create_file_browser(initial_file_list):
     treev_scrl.pack(side="right", fill="y")
     tree.configure(yscrollcommand=treev_scrl.set)
 
+    def check_connection():
+        """
+        Pings the device every 10 seconds to keep the connection alive.
+        """
+        try:
+            response = requests.get("http://192.168.1.254/?custom=1&cmd=3016")
+            response.raise_for_status()  # Raise an exception for bad status codes
+            xmlroot = ET.fromstring(response.text)
+            status = xmlroot.find(".//Status").text
+            if status == "0":
+                # Connection successful
+                print("Ping Success.")
+            else:
+                # Connection failed, handle the error
+                print(f"Connection failed: Status code {status}")
+                messagebox.showerror(
+                    TEXTS["error_msg"], TEXTS["error_connection_failed_message"])
+                exit()  # Exit the program
+        except requests.exceptions.RequestException as e:
+            print(f"Connection error: {e}")
+            messagebox.showerror(
+                TEXTS["error_msg"], TEXTS["error_connection_failed_message"])
+            exit()  # Exit the program
+        except ET.ParseError as e:
+            print(f"XML parsing error: {e}")
+            messagebox.showerror(
+                TEXTS["error_msg"], TEXTS["error_xml_parsing"])
+            exit()  # Exit the program
+        # Schedule next task
+        check_schedule = root.after(10000, check_connection)
+
     def update_treeview():
         """
         Updates the Treeview with the current file list.
@@ -225,7 +252,8 @@ def create_file_browser(initial_file_list):
 
         tree.delete(*tree.get_children())
         for file in file_list:
-            tree.insert("", "end", values=(file["index"], file["filename"], file["filesize"], file["filetime"]))
+            tree.insert("", "end", values=(
+                file["index"], file["filename"], file["filesize"], file["filetime"]))
 
     def refresh_file_list():
         """
@@ -235,7 +263,8 @@ def create_file_browser(initial_file_list):
         nonlocal file_list
         file_list = fetch_file_data("http://192.168.1.254/?custom=1&cmd=3015")
         if last_sort_column:
-            file_list.sort(key=lambda x: x[last_sort_column], reverse=last_sort_direction)
+            file_list.sort(
+                key=lambda x: x[last_sort_column], reverse=last_sort_direction)
         update_treeview()
         check_recording_status()
 
@@ -250,7 +279,8 @@ def create_file_browser(initial_file_list):
         selected_item = tree.selection()
         if selected_item:
             item_values = tree.item(selected_item[0], "values")
-            file = next(f for f in file_list if f["index"] == int(item_values[0]))
+            file = next(
+                f for f in file_list if f["index"] == int(item_values[0]))
             show_playback_url(file["filepath"])
 
     tree.bind("<Double-1>", on_double_click)
@@ -280,8 +310,9 @@ def create_file_browser(initial_file_list):
         if selected_item:
             tree.selection_set(selected_item)  # Select the right-clicked item
             item_values = tree.item(selected_item, "values")
-            file = next(f for f in file_list if f["index"] == int(item_values[0]))
-            if messagebox.askyesno("Delete Confirmation", f"Are you sure you want to delete this file?\n{file['filename']}?"):
+            file = next(
+                f for f in file_list if f["index"] == int(item_values[0]))
+            if messagebox.askyesno(TEXTS["delete_confirmation_title"], TEXTS["delete_confirmation_message"] + file["filename"] + "?"):
                 delete_file(file["filepath"], refresh_file_list)
 
     # Recording status detection
@@ -303,7 +334,8 @@ def create_file_browser(initial_file_list):
                 return True  # Recording in progress
             return False
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to check recording status: {e}")
+            messagebox.showerror(
+                TEXTS["error_msg"], TEXTS["error_recording_status_message"] + str(e))
             return False
 
     def toggle_recording(is_recording):
@@ -316,17 +348,21 @@ def create_file_browser(initial_file_list):
 
         try:
             par_value = "0" if is_recording else "1"
-            response = requests.get(f"http://192.168.1.254/?custom=1&cmd=2001&par={par_value}")
+            response = requests.get(
+                f"http://192.168.1.254/?custom=1&cmd=2001&par={par_value}")
             response.raise_for_status()
             root = ET.fromstring(response.text)
             status = root.find(".//Status").text
             if status == "0":
                 new_status = not is_recording
-                record_button.config(text="Stop Recording" if new_status else "Start Recording")
+                record_button.config(
+                    text=TEXTS["record_button_stop"] if new_status else TEXTS["record_button_start"])
             else:
-                messagebox.showerror("Error", "Failed to toggle recording status, please check server response.")
+                messagebox.showerror(
+                    TEXTS["error_msg"], TEXTS["error_toggle_recording_message"])
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to toggle recording status: {e}")
+            messagebox.showerror(
+                TEXTS["error_msg"], TEXTS["error_toggle_recording_message"] + str(e))
 
     def check_preview_mode():
         """
@@ -342,7 +378,8 @@ def create_file_browser(initial_file_list):
             value = int(root.find(".//Value").text)
             return value == 3  # True for preview mode, False otherwise
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to check preview mode: {e}")
+            messagebox.showerror(
+                TEXTS["error_msg"], TEXTS["error_preview_mode_message"] + str(e))
             return False
 
     def toggle_preview_mode(is_preview_mode):
@@ -354,21 +391,30 @@ def create_file_browser(initial_file_list):
         """
         try:
             par_value = "1" if is_preview_mode else "2"  # 2 for preview, 1 for recording
-            response = requests.get(f"http://192.168.1.254/?custom=1&cmd=3001&par={par_value}")
+            response = requests.get(
+                f"http://192.168.1.254/?custom=1&cmd=3001&par={par_value}")
             response.raise_for_status()
             root = ET.fromstring(response.text)
             status = root.find(".//Status").text
             if status == "0":
                 new_status = not is_preview_mode
-                preview_mode_button.config(text="is Preview mode" if new_status else "is Recording mode")
-                record_button.config(state=tk.DISABLED if new_status else tk.NORMAL)
+                preview_mode_button.config(
+                    text=TEXTS["preview_mode_button_preview"] if new_status else TEXTS["preview_mode_button_recording"])
+                # Switch recording button and live_stream button's state
+                record_button.config(
+                    state=tk.DISABLED if new_status else tk.NORMAL,
+                    text=TEXTS["record_button_start"])
+                live_stream_button.config(
+                    state=tk.NORMAL if not new_status else tk.DISABLED)
                 return new_status
             else:
-                messagebox.showerror("Error", "Failed to toggle preview mode, please check server response.")
+                messagebox.showerror(
+                    TEXTS["error_msg"], TEXTS["error_toggle_preview_mode_message"])
         except Exception as e:
-            messagebox.showerror("Error", "Failed to toggle preview mode: {e}")
+            messagebox.showerror(TEXTS["error_msg"],
+                                 TEXTS["error_toggle_preview_mode_message"] + str(e))
             return is_preview_mode
-        
+
     def sync_time():
         """
         Synchronizes the time with the server.
@@ -378,24 +424,29 @@ def create_file_browser(initial_file_list):
             current_time = datetime.now().strftime("%H:%M:%S")
 
             # Send date
-            response_date = requests.get(f"http://192.168.1.254/?custom=1&cmd=3005&str={current_date}")
+            response_date = requests.get(
+                f"http://192.168.1.254/?custom=1&cmd=3005&str={current_date}")
             response_date.raise_for_status()
             root_date = ET.fromstring(response_date.text)
             status_date = root_date.find(".//Status").text
 
             # Send time
-            response_time = requests.get(f"http://192.168.1.254/?custom=1&cmd=3006&str={current_time}")
+            response_time = requests.get(
+                f"http://192.168.1.254/?custom=1&cmd=3006&str={current_time}")
             response_time.raise_for_status()
             root_time = ET.fromstring(response_time.text)
             status_time = root_time.find(".//Status").text
 
             if status_date == "0" and status_time == "0":
-                messagebox.showinfo("Success", f"Time synchronized successfully.\n{current_date} {current_time}")
+                messagebox.showinfo(
+                    TEXTS["success_msg"], TEXTS["success_sync_time_message"] + f"{current_date} {current_time}")
             else:
-                messagebox.showerror("Error", "Failed to synchronize time. Please check server status.")
+                messagebox.showerror(
+                    TEXTS["error_msg"], TEXTS["error_sync_time_message"])
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to synchronize time: {e}")
+            messagebox.showerror(
+                TEXTS["error_msg"], TEXTS["error_sync_time_message"] + str(e))
 
     def get_live_stream_url():
         """
@@ -411,52 +462,63 @@ def create_file_browser(initial_file_list):
             show_playback_url(movie_link)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to get live stream URL: {e}")
+            messagebox.showerror(
+                TEXTS["error_msg"], TEXTS["error_live_stream_url_message"] + str(e))
 
     tree.bind("<Button-3>", on_right_click)
 
     # Refresh button
-    refresh_button = tk.Button(button_frame, text="Refresh List", command=refresh_file_list)
+    refresh_button = ttk.Button(
+        button_frame, text=TEXTS["refresh_button"], command=refresh_file_list)
     refresh_button.pack(side=tk.LEFT, padx=10)
-
-    # Recording toggle button
-    is_recording = check_recording_status()
-    record_button = tk.Button(
-        button_frame,
-        text="Stop Recording" if is_recording else "Start Recording",
-        command=lambda: toggle_recording(check_recording_status()),
-    )
-    record_button.pack(side=tk.LEFT, padx=10)
 
     # Preview Mode Button
     is_preview_mode = check_preview_mode()
-    preview_mode_button = tk.Button(
+    preview_mode_button = ttk.Button(
         button_frame,
-        text="is Preview mode" if is_preview_mode else "is Recording mode",
+        text=TEXTS["preview_mode_button_preview"] if is_preview_mode else TEXTS["preview_mode_button_recording"],
         command=lambda: toggle_preview_mode(check_preview_mode())
     )
     preview_mode_button.pack(side=tk.LEFT, padx=10)
 
-    # Initial Recording Button State
-    record_button.config(state=tk.NORMAL if not is_preview_mode else tk.DISABLED) 
-
-    sync_time_button = tk.Button(
+    # Recording toggle button
+    is_recording = check_recording_status()
+    record_button = ttk.Button(
         button_frame,
-        text="Sync time",
+        text=TEXTS["record_button_stop"] if is_recording else TEXTS["record_button_start"],
+        command=lambda: toggle_recording(check_recording_status()),
+    )
+    record_button.pack(side=tk.LEFT, padx=10)
+
+    # Initial Recording Button State
+    record_button.config(
+        state=tk.NORMAL if not is_preview_mode else tk.DISABLED)
+
+    sync_time_button = ttk.Button(
+        button_frame,
+        text=TEXTS["sync_time_button"],
         command=sync_time
     )
     sync_time_button.pack(side=tk.LEFT, padx=10)
 
     # Live Stream URL Button
-    live_stream_button = tk.Button(
+    live_stream_button = ttk.Button(
         button_frame,
-        text="Live stream URL",
+        text=TEXTS["live_stream_button"],
         command=get_live_stream_url
     )
     live_stream_button.pack(side=tk.LEFT, padx=10)
 
+    # Initial Live button state
+    live_stream_button.config(
+        state=tk.NORMAL if not is_preview_mode else tk.DISABLED)
+
     tree.pack(fill=tk.BOTH, expand=True)
+    sv_ttk.set_theme("dark")
+
+    check_schedule = root.after(10000, check_connection)
     root.mainloop()
+
 
 if __name__ == "__main__":
     url = "http://192.168.1.254/?custom=1&cmd=3015"
