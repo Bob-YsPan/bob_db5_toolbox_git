@@ -9,7 +9,11 @@ from PIL import Image, ImageTk
 import sv_ttk
 
 # Import the text definitions from gui_text.py
-from gui_text_zh_tw import TEXTS
+from gui_text import TEXTS
+
+
+# Mode of the CAM
+cam_mode = 1
 
 
 def fetch_file_data(url):
@@ -52,6 +56,121 @@ def fetch_file_data(url):
         return []
 
 
+def wifi_config_window():
+    """
+    Creates a popup window for Wi-Fi configuration.
+    """
+    global show_password
+    popup = tk.Toplevel()
+    popup.title(TEXTS["wifi_config_title"])
+    popup.geometry("400x400")
+    popup.transient()
+    popup.grab_set()
+
+    # Label for Wi-Fi SSID
+    ssid_label = ttk.Label(popup, text=TEXTS["wifi_config_ssid"])
+    ssid_label.pack(pady=5)
+
+    # Entry for Wi-Fi SSID
+    ssid_entry = ttk.Entry(popup)
+    ssid_entry.pack(pady=5)
+
+    # Label for Wi-Fi Password
+    password_label = ttk.Label(popup, text=TEXTS["wifi_config_password"])
+    password_label.pack(pady=5)
+
+    # Entry for Wi-Fi Password
+    password_entry = ttk.Entry(popup, show="*")
+    password_entry.pack(pady=5)
+    show_password = False
+
+    def toggle_password_reveal():
+        global show_password
+        show_password = not show_password
+        password_entry.config(show="" if show_password else "*")
+    password_reveal_btn = ttk.Button(
+        popup, text=TEXTS["wifi_config_reveal_btn"], command=toggle_password_reveal)
+    password_reveal_btn.pack(pady=5)
+
+    # Note text
+    note_text = ttk.Label(
+        popup, text=TEXTS["wifi_config_note_label"])
+    note_text.pack(pady=5)
+
+    # Button to send Wi-Fi config
+    def send_wifi_config():
+        ssid = ssid_entry.get()
+        password = password_entry.get()
+        if len(password) < 8:
+            print(f"WiFi password length check fail.")
+            messagebox.showerror(TEXTS["error_msg"],
+                                 TEXTS["error_wifi_len_password"])
+            return
+        error_flag = False
+        # Send Wi-Fi SSID
+        try:
+            response = requests.get(
+                f"http://192.168.1.254/?custom=1&cmd=3003&str={ssid}")
+            response.raise_for_status()
+            root = ET.fromstring(response.text)
+            status = root.find(".//Status").text
+            if status != "0":
+                error_flag = True
+                print(f"Failed to send Wi-Fi SSID: {status}")
+                messagebox.showerror(
+                    TEXTS["error_msg"], TEXTS["error_wifi_config_ssid"])
+        except Exception as e:
+            error_flag = True
+            print(f"Failed to send Wi-Fi SSID: {e}")
+            messagebox.showerror(TEXTS["error_msg"],
+                                 TEXTS["error_wifi_config_ssid"])
+
+        # Send Wi-Fi Password
+        try:
+            response = requests.get(
+                f"http://192.168.1.254/?custom=1&cmd=3004&str={password}")
+            response.raise_for_status()
+            if status != "0":
+                error_flag = True
+                print(f"Failed to send Wi-Fi SSID: {status}")
+                messagebox.showerror(
+                    TEXTS["error_msg"], TEXTS["error_wifi_config_ssid"])
+        except Exception as e:
+            error_flag = True
+            print(f"Failed to send Wi-Fi Password: {e}")
+            messagebox.showerror(TEXTS["error_msg"],
+                                 TEXTS["error_wifi_config_password"])
+        if not error_flag:
+            messagebox.showinfo(
+                TEXTS["success_msg"], TEXTS["wifi_config_setup_success"])
+
+    send_wifi_config_button = ttk.Button(
+        popup, text=TEXTS["wifi_config_send_btn"], command=send_wifi_config)
+    send_wifi_config_button.pack(pady=5)
+
+    # Button to restart device Wi-Fi
+    def restart_wifi():
+        try:
+            response = requests.get("http://192.168.1.254/?custom=1&cmd=3018")
+            response.raise_for_status()
+            root = ET.fromstring(response.text)
+            status = root.find(".//Status").text
+            if status == "0":
+                messagebox.showinfo(
+                    TEXTS["success_msg"], TEXTS["wifi_config_restart_success"])
+            else:
+                messagebox.showerror(
+                    TEXTS["error_msg"], TEXTS["error_wifi_config_restart"])
+        except Exception as e:
+            print(f"Failed to restart device Wi-Fi: {e}")
+            messagebox.showerror(TEXTS["error_msg"],
+                                 TEXTS["error_wifi_config_restart"])
+
+    restart_wifi_button = ttk.Button(
+        popup, text=TEXTS["wifi_config_restart_btn"], command=restart_wifi)
+    restart_wifi_button.pack(pady=5)
+
+
 def get_available_font():
     """
     Finds the first available font from a list of preferred fonts.
@@ -86,20 +205,28 @@ def show_playback_url(filepath):
 
     try:
         # Fetch preview image
-        preview_url = f"{playback_url}/?custom=1&cmd=4001"
+        preview_url = f"{playback_url}/?custom=1&cmd=4002"
         response = requests.get(preview_url)
         response.raise_for_status()
         image_data = response.content
         img = Image.open(BytesIO(image_data))
+        new_height = int(400 / img.width * img.height)
+        img = img.resize(size=(400, new_height),
+                         resample=Image.Resampling.BICUBIC)
         photo = ImageTk.PhotoImage(img)
 
     except Exception as e:
         photo = None
-        print(f"Failed to fetch preview image: {e}")
+        try:
+            root = ET.fromstring(response.text)
+            status = root.find(".//Status").text
+            print(f"Failed to fetch preview image: {status}")
+        except Exception as e:
+            print(f"Failed to fetch preview image: {e}")
 
     popup = tk.Toplevel()
-    popup.title("Playback URL")
-    popup.geometry("500x400")  # Adjust size to accommodate image
+    popup.title(TEXTS["playback_url_title"])
+    popup.geometry("500x500")  # Adjust size to accommodate image
     popup.transient()
     popup.grab_set()
 
@@ -184,6 +311,7 @@ def create_file_browser(initial_file_list):
     root = tk.Tk()
     root.title(TEXTS["title"])
     root.geometry("800x450")
+    sv_ttk.set_theme("dark")
     defaultFont = font.nametofont("TkDefaultFont")
     avaliableFont = get_available_font()
     defaultFont.configure(family=avaliableFont, size=12, weight=font.NORMAL)
@@ -191,6 +319,9 @@ def create_file_browser(initial_file_list):
     # Create a frame to hold the buttons
     button_frame = ttk.Frame(root)
     button_frame.pack(pady=5, fill=tk.X)
+
+    button_frame2 = ttk.Frame(root)
+    button_frame2.pack(pady=5, fill=tk.X)
 
     file_list = initial_file_list
 
@@ -243,7 +374,7 @@ def create_file_browser(initial_file_list):
                 TEXTS["error_msg"], TEXTS["error_xml_parsing"])
             exit()  # Exit the program
         # Schedule next task
-        check_schedule = root.after(10000, check_connection)
+        root.after(10000, check_connection)
 
     def update_treeview():
         """
@@ -266,7 +397,6 @@ def create_file_browser(initial_file_list):
             file_list.sort(
                 key=lambda x: x[last_sort_column], reverse=last_sort_direction)
         update_treeview()
-        check_recording_status()
 
     # Initialize file list
     update_treeview()
@@ -364,56 +494,65 @@ def create_file_browser(initial_file_list):
             messagebox.showerror(
                 TEXTS["error_msg"], TEXTS["error_toggle_recording_message"] + str(e))
 
-    def check_preview_mode():
+    def check_mode():
         """
-        Checks the current preview mode status from the server.
+        Checks the current review mode status from the server.
 
         Returns:
-            bool: True if in preview mode, False otherwise.
+            int: 
+                0: Recording mode
+                3: Review mode
+                4: Photo mode
         """
         try:
             response = requests.get("http://192.168.1.254/?custom=1&cmd=3037")
             response.raise_for_status()
             root = ET.fromstring(response.text)
             value = int(root.find(".//Value").text)
-            return value == 3  # True for preview mode, False otherwise
+            return value
         except Exception as e:
             messagebox.showerror(
-                TEXTS["error_msg"], TEXTS["error_preview_mode_message"] + str(e))
-            return False
+                TEXTS["error_msg"], TEXTS["error_toggle_mode_message"] + str(e))
+            return None  # Return None on error
 
-    def toggle_preview_mode(is_preview_mode):
+    def toggle_mode(current_mode):
         """
-        Toggles the preview mode on the server.
+        Toggles the review mode on the server.
 
         Args:
-            is_preview_mode (bool): True if currently in preview mode, False otherwise.
+            current_mode (int): Current mode (0: Recording, 3: Review, 4: Photo)
+
+        Returns:
+            int: New mode after toggling
         """
         try:
-            par_value = "1" if is_preview_mode else "2"  # 2 for preview, 1 for recording
+            if current_mode == 0:  # Recording -> Photo
+                par_value = "0"
+            elif current_mode == 4:  # Photo -> Review
+                par_value = "2"
+            else:  # Review -> Recording
+                par_value = "1"
+
             response = requests.get(
                 f"http://192.168.1.254/?custom=1&cmd=3001&par={par_value}")
             response.raise_for_status()
             root = ET.fromstring(response.text)
             status = root.find(".//Status").text
             if status == "0":
-                new_status = not is_preview_mode
-                preview_mode_button.config(
-                    text=TEXTS["preview_mode_button_preview"] if new_status else TEXTS["preview_mode_button_recording"])
-                # Switch recording button and live_stream button's state
-                record_button.config(
-                    state=tk.DISABLED if new_status else tk.NORMAL,
-                    text=TEXTS["record_button_start"])
-                live_stream_button.config(
-                    state=tk.NORMAL if not new_status else tk.DISABLED)
-                return new_status
+                if current_mode == 0:
+                    return 4  # Switch to Photo mode
+                elif current_mode == 4:
+                    return 3  # Switch to Review mode
+                else:
+                    return 0  # Switch to Recording mode
             else:
                 messagebox.showerror(
-                    TEXTS["error_msg"], TEXTS["error_toggle_preview_mode_message"])
+                    TEXTS["error_msg"], TEXTS["error_toggle_mode_message"])
+                return current_mode
         except Exception as e:
-            messagebox.showerror(TEXTS["error_msg"],
-                                 TEXTS["error_toggle_preview_mode_message"] + str(e))
-            return is_preview_mode
+            messagebox.showerror(
+                TEXTS["error_msg"], TEXTS["error_toggle_mode_message"] + str(e))
+            return current_mode
 
     def sync_time():
         """
@@ -448,22 +587,55 @@ def create_file_browser(initial_file_list):
             messagebox.showerror(
                 TEXTS["error_msg"], TEXTS["error_sync_time_message"] + str(e))
 
-    def get_live_stream_url():
+    def get_live_stream_url(current_mode):
         """
         Fetches the live stream URL from the server and displays it.
+
+        Args:
+            current_mode (int): Current mode (0: Recording, 3: Review, 4: Photo)
         """
         try:
             response = requests.get("http://192.168.1.254/?custom=1&cmd=2019")
             response.raise_for_status()
             root = ET.fromstring(response.text)
-            movie_link = root.find(".//MovieLiveViewLink").text
-
-            # Simulate double-click behavior (replace with actual playback logic)
+            if current_mode == 0:
+                movie_link = root.find(".//MovieLiveViewLink").text
+            elif current_mode == 4:
+                movie_link = root.find(".//PhotoLiveViewLink").text
             show_playback_url(movie_link)
-
         except Exception as e:
             messagebox.showerror(
                 TEXTS["error_msg"], TEXTS["error_live_stream_url_message"] + str(e))
+
+    def take_picture():
+        """
+        Sends the command to take a picture.
+        """
+        try:
+            response = requests.get("http://192.168.1.254/?custom=1&cmd=1001")
+            response.raise_for_status()
+            root = ET.fromstring(response.text)
+            status = root.find(".//Status").text
+            if status == "0":
+                messagebox.showinfo(
+                    TEXTS["success_msg"], TEXTS["take_pic_success"])
+            else:
+                messagebox.showerror(
+                    TEXTS["error_msg"], TEXTS["error_take_pic"])
+        except Exception as e:
+            print(f"Failed to take picture: {e}")
+            messagebox.showerror(TEXTS["error_msg"], TEXTS["error_take_pic"])
+
+    # Helper function for getting mode text
+    def get_mode_text(mode):
+        if mode == 0:
+            return TEXTS["toggle_mode_button_recording"]
+        elif mode == 3:
+            return TEXTS["toggle_mode_button_review"]
+        elif mode == 4:
+            return TEXTS["toggle_mode_button_photo"]
+        else:
+            return TEXTS["toggle_mode_button_unknown"]
 
     tree.bind("<Button-3>", on_right_click)
 
@@ -472,51 +644,78 @@ def create_file_browser(initial_file_list):
         button_frame, text=TEXTS["refresh_button"], command=refresh_file_list)
     refresh_button.pack(side=tk.LEFT, padx=10)
 
-    # Preview Mode Button
-    is_preview_mode = check_preview_mode()
-    preview_mode_button = ttk.Button(
+    # Get initial mode
+    current_mode = check_mode()
+
+    # Review Mode Button
+    toggle_mode_button = ttk.Button(
         button_frame,
-        text=TEXTS["preview_mode_button_preview"] if is_preview_mode else TEXTS["preview_mode_button_recording"],
-        command=lambda: toggle_preview_mode(check_preview_mode())
+        text=get_mode_text(current_mode),  # Use helper function for text
+        command=lambda: update_mode(toggle_mode(check_mode()))
     )
-    preview_mode_button.pack(side=tk.LEFT, padx=10)
+    toggle_mode_button.pack(side=tk.LEFT, padx=10)
+
+    # Get initial recording status
+    recording_status = check_recording_status()
 
     # Recording toggle button
-    is_recording = check_recording_status()
     record_button = ttk.Button(
         button_frame,
-        text=TEXTS["record_button_stop"] if is_recording else TEXTS["record_button_start"],
+        text=TEXTS["record_button_stop"] if recording_status else TEXTS["record_button_start"],
         command=lambda: toggle_recording(check_recording_status()),
+        state=tk.NORMAL if current_mode == 0 else tk.DISABLED
     )
     record_button.pack(side=tk.LEFT, padx=10)
 
-    # Initial Recording Button State
-    record_button.config(
-        state=tk.NORMAL if not is_preview_mode else tk.DISABLED)
-
-    sync_time_button = ttk.Button(
+    # Take Picture button
+    take_picture_button = ttk.Button(
         button_frame,
-        text=TEXTS["sync_time_button"],
-        command=sync_time
+        text=TEXTS["take_pic_btn"],
+        command=take_picture,
+        state=tk.NORMAL if current_mode == 4 else tk.DISABLED
     )
-    sync_time_button.pack(side=tk.LEFT, padx=10)
+    take_picture_button.pack(side=tk.LEFT, padx=10)
+
+    # Helper function for updating mode and button states
+    def update_mode(new_mode):
+        global current_mode
+        current_mode = new_mode
+        toggle_mode_button.config(text=get_mode_text(current_mode))
+        record_button.config(
+            state=tk.NORMAL if current_mode == 0 else tk.DISABLED,
+            text=TEXTS["record_button_stop"] if recording_status else TEXTS["record_button_start"]
+        )
+        take_picture_button.config(
+            state=tk.NORMAL if current_mode == 4 else tk.DISABLED
+        )
+        live_stream_button.config(
+            state=tk.NORMAL if current_mode != 3 else tk.DISABLED
+        )
 
     # Live Stream URL Button
     live_stream_button = ttk.Button(
         button_frame,
         text=TEXTS["live_stream_button"],
-        command=get_live_stream_url
+        command=lambda: get_live_stream_url(current_mode),
+        state=tk.NORMAL if current_mode != 3 else tk.DISABLED
     )
     live_stream_button.pack(side=tk.LEFT, padx=10)
 
-    # Initial Live button state
-    live_stream_button.config(
-        state=tk.NORMAL if not is_preview_mode else tk.DISABLED)
+    sync_time_button = ttk.Button(
+        button_frame2,
+        text=TEXTS["sync_time_button"],
+        command=sync_time
+    )
+    sync_time_button.pack(side=tk.LEFT, padx=10)
+
+    wifi_config_button = ttk.Button(
+        button_frame2, text=TEXTS["wifi_config_btn"], command=wifi_config_window)
+    wifi_config_button.pack(side=tk.LEFT, padx=10)
 
     tree.pack(fill=tk.BOTH, expand=True)
-    sv_ttk.set_theme("dark")
 
-    check_schedule = root.after(10000, check_connection)
+    # Check schedule
+    root.after(10000, check_connection)
     root.mainloop()
 
 

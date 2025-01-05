@@ -10,7 +10,25 @@
 * 與電腦時間校準功能
 * Windows下改以微軟正黑體作為UI字體
 * 套用接近原生Windows的主題，改為深色UI(使用[rdbende/Sun-Valley-ttk-theme](https://github.com/rdbende/Sun-Valley-ttk-theme))
-## 使用方式
+* ==**以下功能等待編譯**==
+* 修改Wi-Fi功能
+* 高解析度拍照功能
+## 前期準備(直接從源碼執行、需除錯時)
+*  可以直接使用Release頁面下打包好的的執行檔案，執行會更便捷！
+*  預計之後會準備Windows、Linux下的執行檔，macOS...我沒有鈔能力，所以可能需要有興趣的貢獻者幫忙了
+1. 安裝必要的安裝包
+   ```
+   pip install sv_ttk requests pillow
+   ```
+2. 執行腳本
+   ```
+   python main.py
+   ```
+## 編譯指令(待完善)
+```
+pyinstaller --hidden-import=pillow --hidden-import=requests --hidden-import=sv_ttk --onefile --noconsole ./main.py
+```
+## 使用方式(待更新)
 1. *請先連上機器的WiFi*
 2. 啟動軟體需要在資料夾下輸入`python main.py`，按下 **停止錄製** 鈕停止目前機器上的自動錄製
    ![01](captures/01.png)

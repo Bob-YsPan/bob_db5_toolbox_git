@@ -1,18 +1,6 @@
 Bob_Looking_DB5_Toolbox.spec
-build/Bob_Looking_DB5_Toolbox/Analysis-00.toc
-build/Bob_Looking_DB5_Toolbox/base_library.zip
-build/Bob_Looking_DB5_Toolbox/Bob_Looking_DB5_Toolbox.pkg
-build/Bob_Looking_DB5_Toolbox/EXE-00.toc
-build/Bob_Looking_DB5_Toolbox/PKG-00.toc
-build/Bob_Looking_DB5_Toolbox/PYZ-00.pyz
-build/Bob_Looking_DB5_Toolbox/PYZ-00.toc
-build/Bob_Looking_DB5_Toolbox/warn-Bob_Looking_DB5_Toolbox.txt
-build/Bob_Looking_DB5_Toolbox/xref-Bob_Looking_DB5_Toolbox.html
-build/Bob_Looking_DB5_Toolbox/localpycs/pyimod01_archive.pyc
-build/Bob_Looking_DB5_Toolbox/localpycs/pyimod02_importers.pyc
-build/Bob_Looking_DB5_Toolbox/localpycs/pyimod03_ctypes.pyc
-build/Bob_Looking_DB5_Toolbox/localpycs/pyimod04_pywin32.pyc
-build/Bob_Looking_DB5_Toolbox/localpycs/struct.pyc
-dist/Bob_Looking_DB5_Toolbox.exe
+/build/
+/dist/
 main copy.py
-__pycache__
+/__pycache__/
+/conda_db5_toolbox/
