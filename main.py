@@ -188,6 +188,7 @@ def get_available_font():
 
     for font_name in font_fallback_list:
         if font_name in font.families():  # Check if font is available
+            print(f"Select font: {font_name}")
             return font_name
     # Return last fallback font if none are found
     return font_fallback_list[-1]
@@ -312,10 +313,15 @@ def create_file_browser(initial_file_list):
     root = tk.Tk()
     root.title(TEXTS["title"])
     root.geometry("800x450")
+    # Setup UI's default font
+    # avaliableFont = get_available_font()
+    # font_overwrite = font.Font(root, family=avaliableFont, size=12, weight=tk.NORMAL)
+    # style = ttk.Style(master=root)
+    # sv_ttk._load_theme(style)
+    # style.theme_use("sun-valley-dark")
+    # style.configure('.', font=font_overwrite)
     sv_ttk.set_theme("dark")
-    defaultFont = font.nametofont("TkDefaultFont")
-    avaliableFont = get_available_font()
-    defaultFont.configure(family=avaliableFont, size=12, weight=font.NORMAL)
+
 
     # Create a frame to hold the buttons
     button_frame = ttk.Frame(root)
