@@ -1,0 +1,7 @@
+Bob_Looking_DB5_Toolbox.spec
+/build/
+/build/Bob_Looking_DB5_Toolbox/
+/dist/
+main copy.py
+/__pycache__/
+/conda_db5_toolbox/
