@@ -56,4 +56,6 @@ TEXTS = {
     "take_pic_success": "Picture taken successfully!",
     "take_pic_btn": "Take Picture",
     "error_take_pic": "Failed to take picture.",
+    "del_refresh_on": "Refresh after delete ON",
+    "del_refresh_off": "Refresh after delete OFF",
 }

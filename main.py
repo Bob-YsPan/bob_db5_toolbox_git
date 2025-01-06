@@ -266,7 +266,8 @@ def delete_file(filepath, refresh_func):
         if status == "0":
             messagebox.showinfo(
                 TEXTS["success_msg"], TEXTS["success_file_deleted_message"] + f"\n{filepath}")
-            refresh_func()  # Refresh file list after successful deletion
+            # If enable "refrech after delete, activate this"
+            if del_refresh: refresh_func()  # Refresh file list after successful deletion
         else:
             messagebox.showerror(
                 TEXTS["error_msg"], TEXTS["error_delete_failed_message"] + status + ".")
@@ -284,12 +285,13 @@ def create_file_browser(initial_file_list):
     Args:
         initial_file_list (list): A list of dictionaries containing initial file information.
     """
+    global current_mode, del_refresh
+
     root = tk.Tk()
     root.title(TEXTS["title"])
     root.geometry("800x450")
     # Set theme
     sv_ttk.set_theme("dark")
-
 
     # Create a frame to hold the buttons
     button_frame = ttk.Frame(root)
@@ -617,6 +619,19 @@ def create_file_browser(initial_file_list):
         else:
             return TEXTS["toggle_mode_button_unknown"]
 
+    # Initial refresh after delete state
+    del_refresh = True
+
+    def del_refresh_toggle():
+        global del_refresh
+        # Filp status
+        del_refresh = not del_refresh
+        # Update button text
+        del_refresh_btn.config(
+            text=TEXTS["del_refresh_on"] if del_refresh else TEXTS["del_refresh_off"]
+        )
+
+
     tree.bind("<Button-3>", on_right_click)
 
     # Refresh button
@@ -631,7 +646,7 @@ def create_file_browser(initial_file_list):
     toggle_mode_button = ttk.Button(
         button_frame,
         text=get_mode_text(current_mode),  # Use helper function for text
-        command=lambda: update_mode(toggle_mode(check_mode()))
+        command=lambda: update_mode(toggle_mode(current_mode))
     )
     toggle_mode_button.pack(side=tk.LEFT, padx=10)
 
@@ -691,6 +706,12 @@ def create_file_browser(initial_file_list):
     wifi_config_button = ttk.Button(
         button_frame2, text=TEXTS["wifi_config_btn"], command=wifi_config_window)
     wifi_config_button.pack(side=tk.LEFT, padx=10)
+
+    del_refresh_btn = ttk.Button(
+        button_frame2, 
+        text=TEXTS["del_refresh_on"] if del_refresh else TEXTS["del_refresh_off"], 
+        command=del_refresh_toggle)
+    del_refresh_btn.pack(side=tk.LEFT, padx=10)
 
     tree.pack(fill=tk.BOTH, expand=True)
 
