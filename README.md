@@ -10,7 +10,6 @@
 * 與電腦時間校準功能
 * Windows下改以微軟正黑體作為UI字體
 * 套用接近原生Windows的主題，改為深色UI(使用[rdbende/Sun-Valley-ttk-theme](https://github.com/rdbende/Sun-Valley-ttk-theme))
-* ==**以下功能等待編譯**==
 * 修改Wi-Fi功能
 * 高解析度拍照功能
 ## 前期準備(直接從源碼執行、需除錯時)
@@ -25,19 +24,29 @@
    python main.py
    ```
 ## 編譯指令(待完善)
-```
-pyinstaller --hidden-import=pillow --hidden-import=requests --hidden-import=sv_ttk --onefile --noconsole --name=Bob_Looking_DB5_Toolbox ./main.py
-```
+* 因為相關機制有變動：[https://github.com/pyinstaller/pyinstaller/issues/7692](https://github.com/pyinstaller/pyinstaller/issues/7692)
+*  假設使用Python版本 < 3.11.4，請安裝 pyinstaller<=5.11
+*  假設使用Python版本 >= 3.11.4，請安裝 pyinstaller>=5.12
+*  之後使用編譯指令：
+   ```
+   pyinstaller --hidden-import=pillow --hidden-import=requests --hidden-import=sv_ttk --onefile --noconsole --name=Bob_Looking_DB5_Toolbox ./main.py
+   ```
 ## 使用方式(待更新)
 1. *請先連上機器的WiFi*
-2. 啟動軟體需要在資料夾下輸入`python main.py`，按下 **停止錄製** 鈕停止目前機器上的自動錄製
+2. 啟動軟體需要在資料夾下輸入`python main.py`，按下 **停止錄製** 或是 **錄製模式(模式切換)** 鈕停止目前機器上的自動錄製
    ![01](captures/01.png)
-3. 按下 **刷新** 可以更新目前的檔案清單
-4. 就像檔案管理員一樣，點擊上方可以按照欄位排序檔案
+3. 按下 **更新列表** 可以更新目前的檔案清單
+4. 就像檔案管理員一樣，點擊上方可以按照欄位排序檔案，使用名稱排序找到最新的檔案吧
    ![02](captures/02.png)
-5. 點兩下左鍵可以複製檔案的播放連結，可以複製到VLC或是Windows 11"媒體播放器"直接串流播放，貼到瀏覽器可以下載
+5. 點兩下左鍵可以複製檔案的播放連結，可以複製到VLC、MPC-HC或是Windows 11"媒體播放器"直接串流播放，貼到瀏覽器可以下載  
+     
+   **注意！！切換成 檢視模式 時才可以載入預覽圖，韌體限制！**
    ![03](captures/03.png)
 6. 點擊右鍵可以砍檔案
    ![04](captures/04.png)
-7. 新版更新
+7. 怕行車紀錄器預設密碼太好猜？使用Wi-Fi設定工具套用屬於自己的吧，記得依序按下套用跟重啟Wi-Fi來套用
+   ![06](captures/06.png)
+8. 按下同步時間即可讓紀錄器時間與電腦同步，就不用連APP校時間了
+   ![07](captures/07.png)
+10. 新版更新(最新版截圖優先更新在這裡)
    ![05](captures/05.png)
