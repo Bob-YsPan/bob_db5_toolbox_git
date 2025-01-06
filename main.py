@@ -602,7 +602,9 @@ def create_file_browser(initial_file_list):
             response = requests.get("http://192.168.1.254/?custom=1&cmd=2019")
             response.raise_for_status()
             root = ET.fromstring(response.text)
-            if current_mode == 0 == current_mode == 1:
+            print(response.text)
+            print(current_mode)
+            if current_mode == 0 or current_mode == 1:
                 movie_link = root.find(".//MovieLiveViewLink").text
             elif current_mode == 4:
                 movie_link = root.find(".//PhotoLiveViewLink").text
