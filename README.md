@@ -17,9 +17,16 @@
 *  預計之後會準備Windows、Linux下的執行檔，macOS...我沒有鈔能力，所以可能需要有興趣的貢獻者幫忙了
 1. 安裝必要的安裝包
    ```
-   pip install sv_ttk requests pillow
+   pip install requests pillow
    ```
-2. 執行腳本
+2. 安裝修改過的sv_ttk函式庫[https://github.com/Bob-YsPan/Sun-Valley-ttk-theme-fallback-font](https://github.com/Bob-YsPan/Sun-Valley-ttk-theme-fallback-font)
+   ```
+   git clone https://github.com/Bob-YsPan/Sun-Valley-ttk-theme-fallback-font
+   cd Sun-Valley-ttk-theme-fallback-font
+   python setup.py build
+   python setup.py install
+   ```
+3. 執行腳本
    ```
    python main.py
    ```
