@@ -181,6 +181,7 @@ def get_available_font():
 
     font_fallback_list = [
         "微軟正黑體",
+        "Microsoft JhengHei UI",
         "Noto Sans CJK TC",
         "Sans",
     ]  # List of preferred fonts
@@ -513,6 +514,7 @@ def create_file_browser(initial_file_list):
             response.raise_for_status()
             root = ET.fromstring(response.text)
             value = int(root.find(".//Value").text)
+            print(f"Current mode number: {value}")
             return value
         except Exception as e:
             messagebox.showerror(
@@ -602,8 +604,6 @@ def create_file_browser(initial_file_list):
             response = requests.get("http://192.168.1.254/?custom=1&cmd=2019")
             response.raise_for_status()
             root = ET.fromstring(response.text)
-            print(response.text)
-            print(current_mode)
             if current_mode == 0 or current_mode == 1:
                 movie_link = root.find(".//MovieLiveViewLink").text
             elif current_mode == 4:

@@ -23,11 +23,11 @@
    ```
    python main.py
    ```
-## 編譯指令
-* 因為相關機制有變動：[https://github.com/pyinstaller/pyinstaller/issues/7692](https://github.com/pyinstaller/pyinstaller/issues/7692)
-*  假設使用Python版本 < 3.11.4，請安裝 pyinstaller<=5.11
-*  假設使用Python版本 >= 3.11.4，請安裝 pyinstaller>=5.12
-*  之後使用編譯指令：
+## 打包指令
+*  因為相關機制有變動：[https://github.com/pyinstaller/pyinstaller/issues/7692](https://github.com/pyinstaller/pyinstaller/issues/7692)
+*  如果打包不成功，且使用較舊版的Python(Windows)，可以嘗試安裝`pyinstaller==5.11`
+*  如果Windows下打包為病毒，請使用`pyinstaller==5.13`或更低版本
+*  打包指令如下：
    ```
    pyinstaller --hidden-import=pillow --hidden-import=requests --hidden-import=sv_ttk --onefile --noconsole --name=Bob_Looking_DB5_Toolbox ./main.py
    ```
