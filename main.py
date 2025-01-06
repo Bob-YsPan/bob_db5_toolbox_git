@@ -634,7 +634,7 @@ def create_file_browser(initial_file_list):
 
     # Helper function for getting mode text
     def get_mode_text(mode):
-        if mode == 0:
+        if mode == 0 or mode == 1:
             return TEXTS["toggle_mode_button_recording"]
         elif mode == 3:
             return TEXTS["toggle_mode_button_review"]
