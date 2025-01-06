@@ -12,11 +12,6 @@ import sv_ttk
 # Import the text definitions from gui_text.py
 from gui_text import TEXTS
 
-
-# Mode of the CAM
-cam_mode = 1
-
-
 def fetch_file_data(url):
     """
     Fetches file data from a URL and parses the XML response.
@@ -65,7 +60,8 @@ def wifi_config_window():
     popup = tk.Toplevel()
     popup.title(TEXTS["wifi_config_title"])
     popup.geometry("400x400")
-    popup.transient()
+    #popup.transient()
+    popup.wait_visibility() # Make sure grab_set() usable on all system
     popup.grab_set()
 
     # Label for Wi-Fi SSID
@@ -230,7 +226,8 @@ def show_playback_url(filepath):
     popup = tk.Toplevel()
     popup.title(TEXTS["playback_url_title"])
     popup.geometry("500x500")  # Adjust size to accommodate image
-    popup.transient()
+    #popup.transient()
+    popup.wait_visibility() # Make sure grab_set() usable on all system
     popup.grab_set()
 
     label = Label(popup, text=TEXTS["playback_url_text"])
@@ -693,7 +690,7 @@ def create_file_browser(initial_file_list):
         toggle_mode_button.config(text=get_mode_text(current_mode))
         record_button.config(
             state=tk.NORMAL if current_mode == 0 or current_mode == 1 else tk.DISABLED,
-            text=TEXTS["record_button_stop"] if recording_status else TEXTS["record_button_start"]
+            text=TEXTS["record_button_stop"] if check_recording_status() else TEXTS["record_button_start"]
         )
         take_picture_button.config(
             state=tk.NORMAL if current_mode == 4 else tk.DISABLED
