@@ -1,7 +1,8 @@
 import requests
 import xml.etree.ElementTree as ET
 import tkinter as tk
-from tkinter import ttk, messagebox, font, Label, PhotoImage
+from tkinter import ttk, messagebox, font, PhotoImage
+from tkinter.ttk import Label
 from urllib.parse import quote
 from datetime import datetime
 from io import BytesIO
@@ -68,7 +69,7 @@ def wifi_config_window():
     popup.grab_set()
 
     # Label for Wi-Fi SSID
-    ssid_label = ttk.Label(popup, text=TEXTS["wifi_config_ssid"])
+    ssid_label = Label(popup, text=TEXTS["wifi_config_ssid"])
     ssid_label.pack(pady=5)
 
     # Entry for Wi-Fi SSID
@@ -76,7 +77,7 @@ def wifi_config_window():
     ssid_entry.pack(pady=5)
 
     # Label for Wi-Fi Password
-    password_label = ttk.Label(popup, text=TEXTS["wifi_config_password"])
+    password_label = Label(popup, text=TEXTS["wifi_config_password"])
     password_label.pack(pady=5)
 
     # Entry for Wi-Fi Password
@@ -93,7 +94,7 @@ def wifi_config_window():
     password_reveal_btn.pack(pady=5)
 
     # Note text
-    note_text = ttk.Label(
+    note_text = Label(
         popup, text=TEXTS["wifi_config_note_label"])
     note_text.pack(pady=5)
 
@@ -232,7 +233,7 @@ def show_playback_url(filepath):
     popup.transient()
     popup.grab_set()
 
-    label = ttk.Label(popup, text=TEXTS["playback_url_text"])
+    label = Label(popup, text=TEXTS["playback_url_text"])
     label.pack(pady=5)
 
     url_entry = ttk.Entry(popup, width=50)
@@ -314,12 +315,9 @@ def create_file_browser(initial_file_list):
     root.title(TEXTS["title"])
     root.geometry("800x450")
     # Setup UI's default font
-    # avaliableFont = get_available_font()
-    # font_overwrite = font.Font(root, family=avaliableFont, size=12, weight=tk.NORMAL)
-    # style = ttk.Style(master=root)
-    # sv_ttk._load_theme(style)
-    # style.theme_use("sun-valley-dark")
-    # style.configure('.', font=font_overwrite)
+    avaliableFont = get_available_font()
+    default_font = font.nametofont("TkDefaultFont")
+    default_font.config(family=avaliableFont, size=11, weight=tk.NORMAL)
     sv_ttk.set_theme("dark")
 
 
