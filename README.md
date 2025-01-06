@@ -23,7 +23,7 @@
    ```
    python main.py
    ```
-## 編譯指令(待完善)
+## 編譯指令
 * 因為相關機制有變動：[https://github.com/pyinstaller/pyinstaller/issues/7692](https://github.com/pyinstaller/pyinstaller/issues/7692)
 *  假設使用Python版本 < 3.11.4，請安裝 pyinstaller<=5.11
 *  假設使用Python版本 >= 3.11.4，請安裝 pyinstaller>=5.12
@@ -31,7 +31,7 @@
    ```
    pyinstaller --hidden-import=pillow --hidden-import=requests --hidden-import=sv_ttk --onefile --noconsole --name=Bob_Looking_DB5_Toolbox ./main.py
    ```
-## 使用方式(待更新)
+## 使用方式
 1. *請先連上機器的WiFi*
 2. 啟動軟體需要在資料夾下輸入`python main.py`，按下 **停止錄製** 或是 **錄製模式(模式切換)** 鈕停止目前機器上的自動錄製
    ![01](captures/01.png)
