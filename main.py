@@ -167,30 +167,6 @@ def wifi_config_window():
         popup, text=TEXTS["wifi_config_restart_btn"], command=restart_wifi)
     restart_wifi_button.pack(pady=5)
 
-
-def get_available_font():
-    """
-    Finds the first available font from a list of preferred fonts.
-
-    Returns:
-        str: The name of the first available font.
-    """
-
-    font_fallback_list = [
-        "微軟正黑體",
-        "Microsoft JhengHei UI",
-        "Noto Sans CJK TC",
-        "Sans",
-    ]  # List of preferred fonts
-
-    for font_name in font_fallback_list:
-        if font_name in font.families():  # Check if font is available
-            print(f"Select font: {font_name}")
-            return font_name
-    # Return last fallback font if none are found
-    return font_fallback_list[-1]
-
-
 def show_playback_url(filepath):
     """
     Displays a popup window with the playback URL for a file.
@@ -311,10 +287,7 @@ def create_file_browser(initial_file_list):
     root = tk.Tk()
     root.title(TEXTS["title"])
     root.geometry("800x450")
-    # Setup UI's default font
-    avaliableFont = get_available_font()
-    default_font = font.nametofont("TkDefaultFont")
-    default_font.config(family=avaliableFont, size=11, weight=tk.NORMAL)
+    # Set theme
     sv_ttk.set_theme("dark")
 
 
