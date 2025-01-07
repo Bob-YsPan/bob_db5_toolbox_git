@@ -58,4 +58,6 @@ TEXTS = {
     "error_take_pic": "Failed to take picture.",
     "del_refresh_on": "Refresh after delete ON",
     "del_refresh_off": "Refresh after delete OFF",
+    "dl_light": "Light mode",
+    "dl_dark": "Dark mode",
 }

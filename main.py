@@ -12,6 +12,7 @@ import sv_ttk
 # Import the text definitions from gui_text.py
 from gui_text import TEXTS
 
+
 def fetch_file_data(url):
     """
     Fetches file data from a URL and parses the XML response.
@@ -60,8 +61,8 @@ def wifi_config_window():
     popup = tk.Toplevel()
     popup.title(TEXTS["wifi_config_title"])
     popup.geometry("400x400")
-    #popup.transient()
-    popup.wait_visibility() # Make sure grab_set() usable on all system
+    # popup.transient()
+    popup.wait_visibility()  # Make sure grab_set() usable on all system
     popup.grab_set()
 
     # Label for Wi-Fi SSID
@@ -167,6 +168,7 @@ def wifi_config_window():
         popup, text=TEXTS["wifi_config_restart_btn"], command=restart_wifi)
     restart_wifi_button.pack(pady=5)
 
+
 def show_playback_url(filepath):
     """
     Displays a popup window with the playback URL for a file.
@@ -202,8 +204,8 @@ def show_playback_url(filepath):
     popup = tk.Toplevel()
     popup.title(TEXTS["playback_url_title"])
     popup.geometry("500x500")  # Adjust size to accommodate image
-    #popup.transient()
-    popup.wait_visibility() # Make sure grab_set() usable on all system
+    # popup.transient()
+    popup.wait_visibility()  # Make sure grab_set() usable on all system
     popup.grab_set()
 
     label = Label(popup, text=TEXTS["playback_url_text"])
@@ -267,7 +269,8 @@ def delete_file(filepath, refresh_func):
             messagebox.showinfo(
                 TEXTS["success_msg"], TEXTS["success_file_deleted_message"] + f"\n{filepath}")
             # If enable "refrech after delete, activate this"
-            if del_refresh: refresh_func()  # Refresh file list after successful deletion
+            if del_refresh:
+                refresh_func()  # Refresh file list after successful deletion
         else:
             messagebox.showerror(
                 TEXTS["error_msg"], TEXTS["error_delete_failed_message"] + status + ".")
@@ -285,12 +288,20 @@ def create_file_browser(initial_file_list):
     Args:
         initial_file_list (list): A list of dictionaries containing initial file information.
     """
-    global current_mode, del_refresh
+    global current_mode, del_refresh, dl_stat
 
     root = tk.Tk()
     root.title(TEXTS["title"])
     root.geometry("800x450")
-    # Set theme
+    # Load the fallback font list
+    sv_ttk.load_fallback_list([
+        "微軟正黑體",
+        "Microsoft JhengHei UI",
+        "蘋方-繁",
+        "Noto Sans CJK TC",
+        "Segoe UI"
+    ])
+    # Set default theme
     sv_ttk.set_theme("dark")
 
     # Create a frame to hold the buttons
@@ -631,6 +642,21 @@ def create_file_browser(initial_file_list):
             text=TEXTS["del_refresh_on"] if del_refresh else TEXTS["del_refresh_off"]
         )
 
+    dl_stat = False
+
+    def dl_toggle():
+        global dl_stat
+        # Filp status
+        dl_stat = not dl_stat
+        # Apply new theme
+        if dl_stat:
+            sv_ttk.set_theme("light")
+        else:
+            sv_ttk.set_theme("dark")
+        # Update button text
+        dl_toggle_btn.config(
+            text=TEXTS["dl_light"] if dl_stat else TEXTS["dl_dark"],
+        )
 
     tree.bind("<Button-3>", on_right_click)
 
@@ -646,7 +672,7 @@ def create_file_browser(initial_file_list):
     toggle_mode_button = ttk.Button(
         button_frame,
         text=get_mode_text(current_mode),  # Use helper function for text
-        command=lambda: update_mode(toggle_mode(current_mode))
+        command=lambda: update_mode(toggle_mode(check_mode()))  # Check mode on toggle mode to ensure status is correct
     )
     toggle_mode_button.pack(side=tk.LEFT, padx=10)
 
@@ -678,7 +704,8 @@ def create_file_browser(initial_file_list):
         toggle_mode_button.config(text=get_mode_text(current_mode))
         record_button.config(
             state=tk.NORMAL if current_mode == 0 or current_mode == 1 else tk.DISABLED,
-            text=TEXTS["record_button_stop"] if check_recording_status() else TEXTS["record_button_start"]
+            text=TEXTS["record_button_stop"] if check_recording_status(
+            ) else TEXTS["record_button_start"]
         )
         take_picture_button.config(
             state=tk.NORMAL if current_mode == 4 else tk.DISABLED
@@ -708,10 +735,16 @@ def create_file_browser(initial_file_list):
     wifi_config_button.pack(side=tk.LEFT, padx=10)
 
     del_refresh_btn = ttk.Button(
-        button_frame2, 
-        text=TEXTS["del_refresh_on"] if del_refresh else TEXTS["del_refresh_off"], 
+        button_frame2,
+        text=TEXTS["del_refresh_on"] if del_refresh else TEXTS["del_refresh_off"],
         command=del_refresh_toggle)
     del_refresh_btn.pack(side=tk.LEFT, padx=10)
+
+    dl_toggle_btn = ttk.Button(
+        button_frame2,
+        text=TEXTS["dl_light"] if dl_stat else TEXTS["dl_dark"],
+        command=dl_toggle)
+    dl_toggle_btn.pack(side=tk.LEFT, padx=10)
 
     tree.pack(fill=tk.BOTH, expand=True)
 
