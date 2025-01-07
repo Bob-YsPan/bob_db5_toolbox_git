@@ -12,7 +12,7 @@
 * 套用接近原生Windows的主題，改為深色UI(使用[rdbende/Sun-Valley-ttk-theme](https://github.com/rdbende/Sun-Valley-ttk-theme))
 * 修改Wi-Fi功能
 * 高解析度拍照功能
-* 主題套用功能
+* 主題切換功能
 ## 前期準備(直接從源碼執行、需除錯時)
 *  可以直接使用Release頁面下打包好的的執行檔案，執行會更便捷！
 *  預計之後會準備Windows、Linux下的執行檔，macOS...我沒有鈔能力，所以可能需要有興趣的貢獻者幫忙了
