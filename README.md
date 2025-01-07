@@ -37,7 +37,7 @@
 *  如果Windows下打包為病毒，請使用`pyinstaller==5.13`或更低版本
 *  打包指令如下：
    ```
-   pyinstaller --hidden-import=pillow --hidden-import=requests --hidden-import=sv_ttk --onefile --noconsole --name=Bob_Looking_DB5_Toolbox ./main.py
+   pyinstaller --hidden-import=pillow --hidden-import=requests --hidden-import=sv_ttk --hidden-import=PIL._imagingtk --hidden-import=PIL._tkinter_finder --onefile --noconsole --name=Bob_Looking_DB5_Toolbox ./main.py
    ```
 ## 使用方式
 1. *請先連上機器的WiFi*
