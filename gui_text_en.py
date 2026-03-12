@@ -65,4 +65,6 @@ TEXTS = {
     "view_rear": "View Toggle: Rear cam",
     "view_dual": "View Toggle: Dual cam",
     "view_unknown": "View Toggle: Unknown cam",
+    "dl_light": "Light mode",
+    "dl_dark": "Dark mode",
 }

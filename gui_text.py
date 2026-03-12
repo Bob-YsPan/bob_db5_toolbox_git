@@ -65,4 +65,6 @@ TEXTS = {
     "view_rear": "目前視角：後鏡頭",
     "view_dual": "目前視角：雙鏡頭",
     "view_unknown": "目前視角：未知",
+    "dl_light": "淺色模式",
+    "dl_dark": "深色模式",
 }

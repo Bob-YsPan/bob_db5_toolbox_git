@@ -12,6 +12,7 @@
 * 套用接近原生Windows的主題，改為深色UI(使用[rdbende/Sun-Valley-ttk-theme](https://github.com/rdbende/Sun-Valley-ttk-theme))
 * 修改Wi-Fi功能
 * 高解析度拍照功能
+* 主題切換功能
 ## 前期準備(直接從源碼執行、需除錯時)
 *  可以直接使用Release頁面下打包好的的執行檔案，執行會更便捷！
 *  預計之後會準備Windows、Linux下的執行檔，macOS...我沒有鈔能力，所以可能需要有興趣的貢獻者幫忙了
@@ -36,7 +37,7 @@
 *  如果Windows下打包為病毒，請使用`pyinstaller==5.13`或更低版本
 *  打包指令如下：
    ```
-   pyinstaller --hidden-import=pillow --hidden-import=requests --hidden-import=sv_ttk --onefile --noconsole --name=Bob_Looking_DB5_Toolbox ./main.py
+   pyinstaller --hidden-import=pillow --hidden-import=requests --hidden-import=sv_ttk --hidden-import=PIL._imagingtk --hidden-import=PIL._tkinter_finder --onefile --noconsole --name=Bob_Looking_DB5_Toolbox ./main.py
    ```
 ## 使用方式
 1. *請先連上機器的WiFi*
