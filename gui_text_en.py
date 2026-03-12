@@ -58,4 +58,11 @@ TEXTS = {
     "error_take_pic": "Failed to take picture.",
     "del_refresh_on": "Refresh after delete ON",
     "del_refresh_off": "Refresh after delete OFF",
+    "tree_thumb_text": "Thumbnails",
+    "loading_text": "Loading...",
+    "loading_list_text": "Fetching file list...",
+    "view_front": "View Toggle: Front cam",
+    "view_rear": "View Toggle: Rear cam",
+    "view_dual": "View Toggle: Dual cam",
+    "view_unknown": "View Toggle: Unknown cam",
 }

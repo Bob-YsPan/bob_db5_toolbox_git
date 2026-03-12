@@ -459,18 +459,47 @@ def create_file_browser(initial_file_list):
     # 3. 綁定滑鼠滾輪 (MouseWheel)
     tree.bind("<MouseWheel>", lambda e: thumb_mgr.on_scroll_event())
 
+    def update_functional_buttons():
+        """根據目前的設備模式 (current_mode) 決定按鈕可用性"""
+        try:
+            # 錄影按鈕：僅在錄影模式 (0, 1) 可用
+            is_recording_mode = (current_mode == 0 or current_mode == 1)
+            record_button.config(
+                state=tk.NORMAL if is_recording_mode else tk.DISABLED,
+                text=TEXTS["record_button_stop"] if (is_recording_mode and check_recording_status()) else TEXTS["record_button_start"]
+            )
+
+            # 拍照按鈕：僅在拍照模式 (4) 可用
+            take_picture_button.config(
+                state=tk.NORMAL if current_mode == 4 else tk.DISABLED
+            )
+
+            # 串流按鈕：除了檢視模式 (3) 以外皆可用
+            live_stream_button.config(
+                state=tk.NORMAL if current_mode != 3 else tk.DISABLED
+            )
+        except Exception as e:
+            print(f"Update functional buttons failed: {e}")
+
     def set_ui_state(state):
-        """切換介面可用狀態 (tk.DISABLED 或 tk.NORMAL)"""
+        """控制介面鎖定狀態 (網路存取時調用)"""
+        # 基本 Treeview 鎖定
         tree.configure(selectmode='none' if state == tk.DISABLED else 'browse')
-        refresh_button.config(state=state)
-        toggle_mode_button.config(state=state)
-        # 遍歷所有按鈕進行鎖定，避免載入中發生誤觸
-        for btn in [record_button, take_picture_button, live_stream_button, 
-                    sync_time_button, wifi_config_button, del_refresh_btn]:
-            try:
-                btn.config(state=state)
-            except:
-                pass
+        
+        # 1. 處理永遠可以點擊或無條件鎖定的按鈕
+        for btn in [refresh_button, toggle_mode_button, sync_time_button, 
+                    wifi_config_button, del_refresh_btn, view_button]:
+            try: btn.config(state=state)
+            except: pass
+
+        # 2. 如果是恢復 (NORMAL)，則進行第二次「模式檢查」，決定特定功能的按鈕狀態
+        if state == tk.NORMAL:
+            update_functional_buttons()
+        else:
+            # 如果是鎖定 (DISABLED)，直接強制關閉特定功能按鈕
+            record_button.config(state=tk.DISABLED)
+            take_picture_button.config(state=tk.DISABLED)
+            live_stream_button.config(state=tk.DISABLED)
 
     def refresh_file_list():
         """非同步重新整理檔案列表"""
@@ -769,6 +798,8 @@ def create_file_browser(initial_file_list):
 
     tree.bind("<Button-3>", on_right_click)
 
+    tree.pack(fill=tk.BOTH, expand=True)
+
     # Refresh button
     refresh_button = ttk.Button(
         button_frame, text=TEXTS["refresh_button"], command=refresh_file_list)
@@ -811,16 +842,7 @@ def create_file_browser(initial_file_list):
         global current_mode
         current_mode = new_mode
         toggle_mode_button.config(text=get_mode_text(current_mode))
-        record_button.config(
-            state=tk.NORMAL if current_mode == 0 or current_mode == 1 else tk.DISABLED,
-            text=TEXTS["record_button_stop"] if check_recording_status() else TEXTS["record_button_start"]
-        )
-        take_picture_button.config(
-            state=tk.NORMAL if current_mode == 4 else tk.DISABLED
-        )
-        live_stream_button.config(
-            state=tk.NORMAL if current_mode != 3 else tk.DISABLED
-        )
+        set_ui_state(tk.NORMAL)
 
     # Live Stream URL Button
     live_stream_button = ttk.Button(
@@ -848,7 +870,47 @@ def create_file_browser(initial_file_list):
         command=del_refresh_toggle)
     del_refresh_btn.pack(side=tk.LEFT, padx=10)
 
-    tree.pack(fill=tk.BOTH, expand=True)
+    # 紀錄目前視角狀態 (0: 前, 1: 後, 2: 雙)
+    current_view = 2 
+
+    def set_camera_view(view_mode):
+        """傳送指令切換視角"""
+        nonlocal current_view
+        try:
+            response = requests.get(f"http://192.168.1.254/?custom=1&cmd=3028&par={view_mode}")
+            response.raise_for_status()
+            root_xml = ET.fromstring(response.text)
+            status = root_xml.find(".//Status").text
+            
+            if status == "0":
+                current_view = view_mode
+                update_view_button_text()
+            else:
+                print(f"Failed to set view: {status}")
+        except Exception as e:
+            print(f"Error setting camera view: {e}")
+
+    def toggle_view():
+        """循環切換視角：0 -> 1 -> 2 -> 0"""
+        next_view = (current_view + 1) % 3
+        set_camera_view(next_view)
+
+    # 在 button_frame2 內新增按鈕
+    view_button = ttk.Button(
+        button_frame2, 
+        text=TEXTS["view_dual"], # 預設文字
+        command=toggle_view
+    )
+    view_button.pack(side=tk.LEFT, padx=10)
+
+    def update_view_button_text():
+        """根據狀態更新按鈕文字"""
+        mapping = {
+            0: TEXTS["view_front"],
+            1: TEXTS["view_rear"],
+            2: TEXTS["view_dual"]
+        }
+        view_button.config(text=mapping.get(current_view, TEXTS["view_unknown"]))
 
     # 1. 確保初始顯示「載入中」狀態
     tree.delete(*tree.get_children())
@@ -857,12 +919,18 @@ def create_file_browser(initial_file_list):
     # 2. 鎖定 UI 避免在初次載入時被操作
     set_ui_state(tk.DISABLED)
 
-    # 3. 使用 root.after 讓視窗先繪製出來，100ms 後再啟動網路請求執行緒
-    root.after(1000, refresh_file_list)
+    # 在 create_file_browser 結尾處的初始化邏輯
+    def initial_setup():
+        # 1. 啟動時強制切換到雙鏡頭 (par=2)
+        set_camera_view(2)
+        # 2. 接著執行原本的檔案清單獲取
+        refresh_file_list()
+
+    # 原本是 root.after(100, refresh_file_list) 改為：
+    root.after(1000, initial_setup)
     # Check schedule
     root.after(10000, check_connection)
     root.mainloop()
-
 
 if __name__ == "__main__":
     create_file_browser([])

@@ -61,4 +61,8 @@ TEXTS = {
     "tree_thumb_text": "縮圖",
     "loading_text": "載入中...",
     "loading_list_text": "正在獲取檔案列表...",
+    "view_front": "目前視角：前鏡頭",
+    "view_rear": "目前視角：後鏡頭",
+    "view_dual": "目前視角：雙鏡頭",
+    "view_unknown": "目前視角：未知",
 }
