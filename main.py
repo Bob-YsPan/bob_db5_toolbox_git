@@ -297,34 +297,40 @@ def create_file_browser(initial_file_list):
             self.debounce_id = None # 用於紀錄 after 的 ID
 
         def on_scroll_event(self, *args):
-            # 1. 執行原本的捲動
-            if args:
-                tree.yview(*args)
-            
-            # 2. 防抖邏輯：如果 1 秒內再次觸發，就取消上一次的排程
+            """處理滾動條事件"""
+            if args: self.tree.yview(*args)
+            self._trigger_debounce()
+
+        def on_resize_event(self, event=None):
+            """處理視窗大小改變事件"""
+            # 只有當 Treeview 真的有資料時才觸發，避免啟動時的虛假觸發
+            if self.tree.get_children():
+                self._trigger_debounce()
+
+        def _trigger_debounce(self):
+            """統一的防抖觸發邏輯"""
             if self.debounce_id:
                 root.after_cancel(self.debounce_id)
-            
-            # 3. 重新計時 1000ms (1秒)
             self.debounce_id = root.after(1000, self._process_visible_area)
 
         def _process_visible_area(self):
+            # ... 保持之前的邏輯：計算 y_top, y_bottom 並下載縮圖 ...
             all_items = self.tree.get_children()
-            if not all_items: return
+            if not all_items or "loading_placeholder" in all_items: return
 
-            # 計算當前可見範圍
             y_top, y_bottom = self.tree.yview()
             total = len(all_items)
-            start_idx = int(y_top * total)
-            end_idx = min(int(y_bottom * total) + 1, total)
+            
+            # 這裡多加一個緩衝 Buffer，避免邊緣項目沒抓到
+            start_idx = max(0, int(y_top * total) - 1)
+            end_idx = min(int(y_bottom * total) + 2, total)
 
-            # 只處理可見區域的任務
             for i in range(start_idx, end_idx):
                 item_id = all_items[i]
-                # 如果還沒有圖片且不在下載中，則發起請求
                 if not self.tree.item(item_id, "image") and int(item_id) not in self.loading_indices:
-                    file_info = next(f for f in file_list if str(f["index"]) == item_id)
-                    self._start_download(item_id, file_info["filepath"])
+                    file_info = next((f for f in file_list if str(f["index"]) == item_id), None)
+                    if file_info:
+                        self._start_download(item_id, file_info["filepath"])
 
         def _start_download(self, item_id, filepath):
             idx = int(item_id)
@@ -443,27 +449,69 @@ def create_file_browser(initial_file_list):
         # 手動觸發一次可見區域檢查
         thumb_mgr._process_visible_area()
 
-    # 滾動條綁定
+    # 1. 綁定視窗大小改變事件 (Configure)
+    tree.bind("<Configure>", thumb_mgr.on_resize_event)
+
+    # 2. 綁定滾動條 (Scrollbar)
     treev_scrl.config(command=thumb_mgr.on_scroll_event)
     tree.configure(yscrollcommand=treev_scrl.set)
-    
-    # 處理滑鼠滾輪 (Windows 為 <MouseWheel>)
+
+    # 3. 綁定滑鼠滾輪 (MouseWheel)
     tree.bind("<MouseWheel>", lambda e: thumb_mgr.on_scroll_event())
 
-    def refresh_file_list():
-        """
-        Refreshes the file list by fetching data from the server and updates the Treeview.
-        """
+    def set_ui_state(state):
+        """切換介面可用狀態 (tk.DISABLED 或 tk.NORMAL)"""
+        tree.configure(selectmode='none' if state == tk.DISABLED else 'browse')
+        refresh_button.config(state=state)
+        toggle_mode_button.config(state=state)
+        # 遍歷所有按鈕進行鎖定，避免載入中發生誤觸
+        for btn in [record_button, take_picture_button, live_stream_button, 
+                    sync_time_button, wifi_config_button, del_refresh_btn]:
+            try:
+                btn.config(state=state)
+            except:
+                pass
 
-        nonlocal file_list
-        file_list = fetch_file_data("http://192.168.1.254/?custom=1&cmd=3015")
-        if last_sort_column:
-            file_list.sort(
-                key=lambda x: x[last_sort_column], reverse=last_sort_direction)
-        update_treeview()
+    def refresh_file_list():
+        """非同步重新整理檔案列表"""
+        # 1. 進入載入狀態
+        set_ui_state(tk.DISABLED)
+        tree.delete(*tree.get_children())
+        # 在第一行顯示載入中訊息
+        tree.insert("", "end", iid="loading_placeholder", text=TEXTS["loading_list_text"])
+
+        def worker():
+            nonlocal file_list
+            try:
+                # 執行原本的網路獲取動作
+                new_data = fetch_file_data("http://192.168.1.254/?custom=1&cmd=3015")
+                
+                # 回到主執行緒更新 UI
+                root.after(0, lambda: finalize_refresh(new_data))
+            except Exception as e:
+                root.after(0, lambda: messagebox.showerror(TEXTS["error_msg"], str(e)))
+                root.after(0, lambda: set_ui_state(tk.NORMAL))
+
+        def finalize_refresh(new_data):
+            nonlocal file_list
+            file_list = new_data
+            if last_sort_column:
+                file_list.sort(key=lambda x: x.get(last_sort_column, 0), reverse=last_sort_direction)
+            
+            # 2. 清除暫存文字並填入正式資料
+            tree.delete(*tree.get_children())
+            update_treeview()
+            
+            # 3. 恢復介面
+            set_ui_state(tk.NORMAL)
+            # 載入完成後觸發一次縮圖掃描
+            thumb_mgr.on_scroll_event()
+
+        # 啟動執行緒
+        threading.Thread(target=worker, daemon=True).start()
 
     # Initialize file list
-    update_treeview()
+    # update_treeview()
 
     def on_double_click(event):
         """
@@ -480,7 +528,7 @@ def create_file_browser(initial_file_list):
     tree.bind("<Double-1>", on_double_click)
 
     sort_direction = {col: False for col in columns}
-    last_sort_column, last_sort_direction = "index", False
+    last_sort_column, last_sort_direction = "filetime", True
 
     def sort_column(column):
         """
@@ -802,15 +850,19 @@ def create_file_browser(initial_file_list):
 
     tree.pack(fill=tk.BOTH, expand=True)
 
+    # 1. 確保初始顯示「載入中」狀態
+    tree.delete(*tree.get_children())
+    tree.insert("", "end", iid="loading_placeholder", text=TEXTS["loading_list_text"])
+    
+    # 2. 鎖定 UI 避免在初次載入時被操作
+    set_ui_state(tk.DISABLED)
+
+    # 3. 使用 root.after 讓視窗先繪製出來，100ms 後再啟動網路請求執行緒
+    root.after(1000, refresh_file_list)
     # Check schedule
     root.after(10000, check_connection)
     root.mainloop()
 
 
 if __name__ == "__main__":
-    url = "http://192.168.1.254/?custom=1&cmd=3015"
-    file_data = fetch_file_data(url)
-    if file_data:
-        create_file_browser(file_data)
-    else:
-        print("Failed to retrieve file data, please check URL or network connection.")
+    create_file_browser([])

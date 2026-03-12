@@ -60,4 +60,5 @@ TEXTS = {
     "del_refresh_off": "刪除後自動重整 OFF",
     "tree_thumb_text": "縮圖",
     "loading_text": "載入中...",
+    "loading_list_text": "正在獲取檔案列表...",
 }
