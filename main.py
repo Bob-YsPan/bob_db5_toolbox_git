@@ -380,6 +380,10 @@ def create_file_browser(initial_file_list):
     # Set default theme
     sv_ttk.set_theme("dark")
 
+    # 1. 增加樣式設定 (設定行高以容納縮圖)
+    style = ttk.Style()
+    style.configure("Treeview", rowheight=100)
+
     # Create a frame to hold the buttons
     button_frame = ttk.Frame(root)
     button_frame.pack(pady=5, fill=tk.X)
@@ -388,10 +392,6 @@ def create_file_browser(initial_file_list):
     button_frame2.pack(pady=5, fill=tk.X)
 
     file_list = initial_file_list
-
-    # 1. 增加樣式設定 (設定行高以容納縮圖)
-    style = ttk.Style()
-    style.configure("Treeview", rowheight=100)
 
     # 重新定義欄位：將 index 移出第一欄，縮圖由 #0 負責
     columns = ("index", "filename", "filesize", "filetime")
@@ -817,6 +817,9 @@ def create_file_browser(initial_file_list):
             sv_ttk.set_theme("light")
         else:
             sv_ttk.set_theme("dark")
+        # Update treeview's height
+        style = ttk.Style()
+        style.configure("Treeview", rowheight=100)
         # Update button text
         dl_toggle_btn.config(
             text=TEXTS["dl_light"] if dl_stat else TEXTS["dl_dark"],
