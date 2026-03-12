@@ -8,6 +8,8 @@ from datetime import datetime
 from io import BytesIO
 from PIL import Image, ImageTk
 import sv_ttk
+import threading
+from queue import Queue
 
 # Import the text definitions from gui_text.py
 from gui_text import TEXTS
@@ -285,6 +287,74 @@ def create_file_browser(initial_file_list):
     Args:
         initial_file_list (list): A list of dictionaries containing initial file information.
     """
+
+    class ThumbnailManager:
+        def __init__(self, tree_widget):
+            self.tree = tree_widget
+            self.cache = {}
+            self.loading_indices = set()
+            self.semaphore = threading.Semaphore(3) # 限制併發數
+            self.debounce_id = None # 用於紀錄 after 的 ID
+
+        def on_scroll_event(self, *args):
+            # 1. 執行原本的捲動
+            if args:
+                tree.yview(*args)
+            
+            # 2. 防抖邏輯：如果 1 秒內再次觸發，就取消上一次的排程
+            if self.debounce_id:
+                root.after_cancel(self.debounce_id)
+            
+            # 3. 重新計時 1000ms (1秒)
+            self.debounce_id = root.after(1000, self._process_visible_area)
+
+        def _process_visible_area(self):
+            all_items = self.tree.get_children()
+            if not all_items: return
+
+            # 計算當前可見範圍
+            y_top, y_bottom = self.tree.yview()
+            total = len(all_items)
+            start_idx = int(y_top * total)
+            end_idx = min(int(y_bottom * total) + 1, total)
+
+            # 只處理可見區域的任務
+            for i in range(start_idx, end_idx):
+                item_id = all_items[i]
+                # 如果還沒有圖片且不在下載中，則發起請求
+                if not self.tree.item(item_id, "image") and int(item_id) not in self.loading_indices:
+                    file_info = next(f for f in file_list if str(f["index"]) == item_id)
+                    self._start_download(item_id, file_info["filepath"])
+
+        def _start_download(self, item_id, filepath):
+            idx = int(item_id)
+            self.loading_indices.add(idx)
+            
+            def worker():
+                with self.semaphore:
+                    try:
+                        # 轉換為預覽圖網址
+                        url = filepath.replace("A:\\", "http://192.168.1.254/").replace("\\", "/") + "/?custom=1&cmd=4002"
+                        resp = requests.get(url, timeout=5)
+                        if resp.status_code == 200:
+                            img = Image.open(BytesIO(resp.content))
+                            img.thumbnail((160, 90))
+                            photo = ImageTk.PhotoImage(img)
+                            self.cache[idx] = photo
+                            # 更新 UI
+                            self.tree.after(0, lambda: self._update_item(item_id, photo))
+                    except Exception as e:
+                        print(f"Download failed: {e}")
+                    finally:
+                        self.loading_indices.remove(idx)
+
+            threading.Thread(target=worker, daemon=True).start()
+
+        def _update_item(self, item_id, photo):
+            if self.tree.exists(item_id):
+                # 設定圖片，並清空 Loading 文字 (text 屬性對應 #0 欄位的文字)
+                self.tree.item(item_id, image=photo, text="")
+
     global current_mode, del_refresh
 
     root = tk.Tk()
@@ -302,8 +372,19 @@ def create_file_browser(initial_file_list):
 
     file_list = initial_file_list
 
+    # 1. 增加樣式設定 (設定行高以容納縮圖)
+    style = ttk.Style()
+    style.configure("Treeview", rowheight=100)
+
+    # 重新定義欄位：將 index 移出第一欄，縮圖由 #0 負責
     columns = ("index", "filename", "filesize", "filetime")
-    tree = ttk.Treeview(root, columns=columns, show="headings")
+    tree = ttk.Treeview(root, columns=columns, show="tree headings") # 這裡要寫 "tree headings"
+    thumb_mgr = ThumbnailManager(tree)
+    
+    # 設定 #0 欄位為縮圖欄位
+    tree.heading("#0", text=TEXTS["tree_thumb_text"])
+    tree.column("#0", width=160, anchor="center")
+
     tree.heading("index", text=TEXTS["tree_index_text"],
                  command=lambda: sort_column("index"))
     tree.heading("filename", text=TEXTS["tree_fname_text"],
@@ -314,7 +395,7 @@ def create_file_browser(initial_file_list):
                  command=lambda: sort_column("filetime"))
 
     tree.column("index", width=50, anchor="center")
-    tree.column("filename", width=400, anchor="w")
+    tree.column("filename", width=300, anchor="w")
     tree.column("filesize", width=100, anchor="e")
     tree.column("filetime", width=150, anchor="center")
 
@@ -354,14 +435,20 @@ def create_file_browser(initial_file_list):
         root.after(10000, check_connection)
 
     def update_treeview():
-        """
-        Updates the Treeview with the current file list.
-        """
-
         tree.delete(*tree.get_children())
         for file in file_list:
-            tree.insert("", "end", values=(
-                file["index"], file["filename"], file["filesize"], file["filetime"]))
+            # 初始狀態：text="載入中..." 會顯示在 #0 欄位，直到 image 被載入為止
+            tree.insert("", "end", iid=file["index"], text=TEXTS["loading_text"], 
+                        values=(file["index"], file["filename"], file["filesize"], file["filetime"]))
+        # 手動觸發一次可見區域檢查
+        thumb_mgr._process_visible_area()
+
+    # 滾動條綁定
+    treev_scrl.config(command=thumb_mgr.on_scroll_event)
+    tree.configure(yscrollcommand=treev_scrl.set)
+    
+    # 處理滑鼠滾輪 (Windows 為 <MouseWheel>)
+    tree.bind("<MouseWheel>", lambda e: thumb_mgr.on_scroll_event())
 
     def refresh_file_list():
         """

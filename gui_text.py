@@ -58,4 +58,6 @@ TEXTS = {
     "error_take_pic": "拍照失敗。",
     "del_refresh_on": "刪除後自動重整 ON",
     "del_refresh_off": "刪除後自動重整 OFF",
+    "tree_thumb_text": "縮圖",
+    "loading_text": "載入中...",
 }
